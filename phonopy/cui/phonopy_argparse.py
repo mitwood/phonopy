@@ -131,6 +131,7 @@ def get_parser():
         irreps_qpoint=None,
         lapack_solver=False,
         loglevel=None,
+        lammps_mode=None,
         masses=None,
         magmom=None,
         mesh_format=None,
@@ -328,6 +329,9 @@ def get_parser():
     parser.add_argument(
         "--loglevel", dest="loglevel", type=int,
         help="Log level")
+    parser.add_argument(
+        "--lammps", dest="lammps_mode", action="store_true",
+        help="Invoke LAMMPS mode")
     parser.add_argument(
         "--mass", nargs='+', dest="masses",
         help="Same as MASS tag")

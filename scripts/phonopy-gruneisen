@@ -198,6 +198,9 @@ def get_options():
         "--gc", "--gamma_center", dest="is_gamma_center", action="store_true",
         help="Set mesh as Gamma center")
     parser.add_argument(
+        "--lammps", dest="lammps_mode", action="store_true",
+        help="Invoke LAMMPS mode")
+    parser.add_argument(
         "--marker", dest="marker",
         help="Marker for plot (matplotlib)")
     parser.add_argument(
@@ -326,6 +329,8 @@ def main(args):
         interface_mode = 'crystal'
     elif args.turbomole_mode:
         interface_mode = 'turbomole'
+    elif args.lammps_mode:
+        interface_mode = 'lammps'
     else:
         interface_mode = 'vasp'
     physical_units = get_default_physical_units(interface_mode)

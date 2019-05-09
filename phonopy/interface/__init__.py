@@ -47,7 +47,7 @@ def get_interface_mode(args):
     """
 
     calculator_list = ['wien2k', 'abinit', 'qe', 'elk', 'siesta', 'cp2k',
-                       'crystal', 'vasp', 'dftbp', 'turbomole']
+                       'crystal', 'vasp', 'dftbp', 'turbomole', 'lammps']
     for calculator in calculator_list:
         mode = "%s_mode" % calculator
         if mode in args and args.__dict__[mode]:
@@ -62,6 +62,9 @@ def write_supercells_with_displacements(interface_mode,
                                         optional_structure_info):
     if interface_mode is None or interface_mode == 'vasp':
         from phonopy.interface.vasp import write_supercells_with_displacements
+        write_supercells_with_displacements(supercell, cells_with_disps)
+    elif interface_mode is 'lammps':
+        from phonopy.interface.lammps import write_supercells_with_displacements
         write_supercells_with_displacements(supercell, cells_with_disps)
     elif interface_mode is 'abinit':
         from phonopy.interface.abinit import write_supercells_with_displacements
@@ -133,6 +136,13 @@ def read_crystal_structure(filename=None,
         else:
             unitcell = read_vasp(cell_filename, symbols=chemical_symbols)
         return unitcell, (cell_filename,)
+    elif  interface_mode == 'lammps':
+        from phonopy.interface.vasp import read_vasp
+        if chemical_symbols is None:
+            unitcell = read_vasp(cell_filename)
+        else:
+            unitcell = read_vasp(cell_filename, symbols=chemical_symbols)
+        return unitcell, (cell_filename,)
     elif interface_mode == 'abinit':
         from phonopy.interface.abinit import read_abinit
         unitcell = read_abinit(cell_filename)
@@ -174,6 +184,8 @@ def read_crystal_structure(filename=None,
 def get_default_cell_filename(interface_mode):
     if interface_mode is None or interface_mode == 'vasp':
         return "POSCAR"
+    elif interface_mode == 'lammps':
+        return "POSCAR"
     elif interface_mode in ('abinit', 'qe'):
         return "unitcell.in"
     elif interface_mode == 'wien2k':
@@ -198,6 +210,8 @@ def get_default_supercell_filename(interface_mode):
     if interface_mode == 'phonopy_yaml':
         return "phonopy_disp.yaml"
     elif interface_mode is None or interface_mode == 'vasp':
+        return "SPOSCAR"
+    elif interface_mode == 'lammps':
         return "SPOSCAR"
     elif interface_mode in ('abinit', 'elk', 'qe'):
         return "supercell.in"
@@ -228,7 +242,7 @@ def get_default_displacement_distance(interface_mode):
     return displacement_distance
 
 
-def get_default_physical_units(interface_mode=None):
+def get_default_physical_units(interface_mode):
     """Return physical units used for calculators
 
     Physical units: energy,  distance,  atomic mass, force
@@ -241,7 +255,7 @@ def get_default_physical_units(interface_mode=None):
     CRYSTAL       : eV,      Angstrom,  AMU,         eV/Angstroem
     DFTB+         : hartree, au,        AMU          hartree/au
     TURBOMOLE     : hartree, au,        AMU,         hartree/au
-
+    lammps(metal) : eV,      Angstrom,  AMU,         eV/Angstrom
     """
 
     from phonopy.units import (Wien2kToTHz, AbinitToTHz, PwscfToTHz, ElkToTHz,
@@ -255,6 +269,12 @@ def get_default_physical_units(interface_mode=None):
              'length_unit': None}
 
     if interface_mode is None or interface_mode == 'vasp':
+        units['factor'] = VaspToTHz
+        units['nac_factor'] = Hartree * Bohr
+        units['distance_to_A'] = 1.0
+        units['force_constants_unit'] = 'eV/Angstrom^2'
+        units['length_unit'] = 'Angstrom'
+    elif interface_mode == 'lammps':
         units['factor'] = VaspToTHz
         units['nac_factor'] = Hartree * Bohr
         units['distance_to_A'] = 1.0
@@ -343,7 +363,7 @@ def create_FORCE_SETS(interface_mode,
                   "other files." % force_filenames[0])
 
     if interface_mode in (None, 'vasp', 'abinit', 'elk', 'qe', 'siesta',
-                          'cp2k', 'crystal', 'dftbp', 'turbomole'):
+                          'cp2k', 'crystal', 'dftbp', 'turbomole', 'lammps'):
         disp_dataset = parse_disp_yaml(filename=disp_filename)
         num_atoms = disp_dataset['natom']
         num_displacements = len(disp_dataset['first_atoms'])
@@ -412,6 +432,8 @@ def get_force_sets(interface_mode,
 
     if interface_mode is None or interface_mode == 'vasp':
         from phonopy.interface.vasp import parse_set_of_forces
+    elif interface_mode == 'lammps':
+        from phonopy.interface.lammps import parse_set_of_forces
     elif interface_mode == 'abinit':
         from phonopy.interface.abinit import parse_set_of_forces
     elif interface_mode == 'qe':
